@@ -45,5 +45,6 @@ var (
 	_ Region = Cap{}
 	// _ Region = CellUnion{}
 	//_ Region = (*Polygon)(nil)
+	_ Region = Loop{}
 	_ Region = Rect{}
 )

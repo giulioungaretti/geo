@@ -203,6 +203,115 @@ func (l Loop) isEmptyOrFull() bool {
 	return len(l.vertices) == 1
 }
 
+// CapBound returns a bounding spherical cap. This is not guaranteed to be exact.
+func (l Loop) CapBound() Cap {
+	return l.bound.CapBound()
+}
+
+// ContainsCell  method returns true if the bbox contains the cell
+// if the cell is on the edges is discarded, but it could be either
+// inside the loop, or in the space between the bbox and the edges.
+// TODO avoid approximation.
+func (l Loop) ContainsCell(cell Cell) bool {
+	// fast check: if cell not in bounding rect
+	// return false
+	cellBound := cell.RectBound()
+	if !l.bound.Contains(cellBound) {
+		return false
+	}
+	// cell (*) is inside the bounding box
+	// but it could be outisde the vertices
+	//  *					ouside bbox
+	//  _______________
+	// |*	.________. |	inside bbox
+	// |	|    *   | |	inside
+	// |	|   .__*_. |	sits on vertex
+	// |	|   |      |
+	// |	.___.*     |	contains edge
+	// |_______________|
+	verts := l.Vertices()
+	for _, vert := range verts {
+		// if the cell contains one of the edges
+		// then it's not inside
+		contains := cell.ContainsPoint(vert)
+		if contains {
+			return false
+		}
+	}
+	// get cell vertexes
+	var vertexes []Point
+	for i := 0; i < 4; i++ {
+		vertexes = append(vertexes, cell.Vertex(i))
+	}
+	// if they cross cell is not inside
+	var x bool
+	for i, vert := range verts {
+		// make sure we get the last vertex
+		if i == len(verts) {
+			i = 0
+		}
+		for j, vert2 := range vertexes {
+			// make sure we get the last vertex
+			if j == len(vertexes) {
+				j = 0
+			}
+			x = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
+			// first true hit then they cross
+			if x {
+				return x
+			}
+		}
+	}
+	l.ContainsOrigin()
+	return x
+}
+
+//IntersectsCell returns false if the region does not intersect the given cell.
+//Otherwise, either region intersects the cell, or the intersection
+//relationship could not be determined.
+func (l Loop) IntersectsCell(cell Cell) bool {
+	// fast check: if cell not in bounding rect
+	// return false
+	cellBound := cell.RectBound()
+	if !l.bound.Contains(cellBound) {
+		return false
+	}
+	verts := l.Vertices()
+	for _, vert := range verts {
+		// if the cell contains one of the edges
+		// then it does intersect
+		contains := cell.ContainsPoint(vert)
+		if contains {
+			return true
+		}
+	}
+	// get cell vertexes
+	var vertexes []Point
+	for i := 0; i < 4; i++ {
+		vertexes = append(vertexes, cell.Vertex(i))
+	}
+	// if  cross cell intersect
+	var x bool
+	for i, vert := range verts {
+		// make sure we get the last vertex
+		if i == len(verts) {
+			i = 0
+		}
+		for j, vert2 := range vertexes {
+			// make sure we get the last vertex
+			if j == len(vertexes) {
+				j = 0
+			}
+			x = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
+			// first true hit then they cross
+			if x {
+				return x
+			}
+		}
+	}
+	return x
+}
+
 // RectBound returns a tight bounding rectangle. If the loop contains the point,
 // the bound also contains it.
 func (l Loop) RectBound() Rect {

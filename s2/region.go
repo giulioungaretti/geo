@@ -44,5 +44,6 @@ var (
 	_ Region = Cell{}
 	_ Region = Cap{}
 	// _ Region = CellUnion{}
+	_ Region = Loop{}
 	_ Region = Rect{}
 )

@@ -208,7 +208,7 @@ func (l Loop) CapBound() Cap {
 	return l.bound.CapBound()
 }
 
-// ContainsCell  method returns true if the bbox contains the cell
+// ContainsCell  method returns true if the loop contains the cell
 // if the cell is on the edges is discarded, but it could be either
 // inside the loop, or in the space between the bbox and the edges.
 // TODO avoid approximation.
@@ -273,7 +273,7 @@ func (l Loop) IntersectsCell(cell Cell) bool {
 	// fast check: if cell not in bounding rect
 	// return false
 	cellBound := cell.RectBound()
-	if !l.bound.Contains(cellBound) {
+	if !l.bound.Intersects(cellBound) {
 		return false
 	}
 	verts := l.Vertices()

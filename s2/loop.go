@@ -239,31 +239,14 @@ func (l Loop) ContainsCell(cell Cell) bool {
 		}
 	}
 	// get cell vertexes
-	var vertexes []Point
+	var res bool
 	for i := 0; i < 4; i++ {
-		vertexes = append(vertexes, cell.Vertex(i))
-	}
-	// if they cross cell is not inside
-	var x bool
-	for i, vert := range verts {
-		// make sure we get the last vertex
-		if i == len(verts) {
-			i = 0
-		}
-		for j, vert2 := range vertexes {
-			// make sure we get the last vertex
-			if j == len(vertexes) {
-				j = 0
-			}
-			x = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
-			// first true hit then they cross
-			if x {
-				return x
-			}
+		res = l.ContainsPoint(cell.Vertex(i))
+		if !res {
+			return false
 		}
 	}
-	l.ContainsOrigin()
-	return x
+	return res
 }
 
 //IntersectsCell returns false if the region does not intersect the given cell.
@@ -294,12 +277,12 @@ func (l Loop) IntersectsCell(cell Cell) bool {
 	var x bool
 	for i, vert := range verts {
 		// make sure we get the last vertex
-		if i == len(verts) {
+		if i == len(verts)-1 {
 			i = 0
 		}
 		for j, vert2 := range vertexes {
 			// make sure we get the last vertex
-			if j == len(vertexes) {
+			if j == len(vertexes)-1 {
 				j = 0
 			}
 			x = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])

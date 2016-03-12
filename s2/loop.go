@@ -211,7 +211,7 @@ func (l Loop) CapBound() Cap {
 // ContainsCell  method returns true if the loop contains the cell
 // if the cell is on the edges is discarded, but it could be either
 // inside the loop, or in the space between the bbox and the edges.
-// TODO avoid approximation.
+// TODO is this correct?
 func (l Loop) ContainsCell(cell Cell) bool {
 	// fast check: if cell not in bounding rect
 	// return false
@@ -252,6 +252,7 @@ func (l Loop) ContainsCell(cell Cell) bool {
 //IntersectsCell returns false if the region does not intersect the given cell.
 //Otherwise, either region intersects the cell, or the intersection
 //relationship could not be determined.
+// TODO this is  super buggy
 func (l Loop) IntersectsCell(cell Cell) bool {
 	// fast check: if cell not in bounding rect
 	// return false

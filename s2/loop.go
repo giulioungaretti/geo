@@ -17,6 +17,7 @@ limitations under the License.
 package s2
 
 import (
+	"log"
 	"math"
 
 	"github.com/golang/geo/r1"
@@ -212,7 +213,7 @@ func (l Loop) CapBound() Cap {
 // if the cell is on the edges is discarded, but it could be either
 // inside the loop, or in the space between the bbox and the edges.
 // TODO is this correct?
-func (l Loop) ContainsCell(cell Cell) bool {
+func (l Loop) ContainsCell(cell Cell) (res bool) {
 	// fast check: if cell not in bounding rect
 	// return false
 	cellBound := cell.RectBound()
@@ -229,17 +230,8 @@ func (l Loop) ContainsCell(cell Cell) bool {
 	// |	|   |      |
 	// |	.___.*     |	contains edge
 	// |_______________|
-	verts := l.Vertices()
-	for _, vert := range verts {
-		// if the cell contains one of the edges
-		// then it's not inside
-		contains := cell.ContainsPoint(vert)
-		if contains {
-			return false
-		}
-	}
+	//
 	// get cell vertexes
-	var res bool
 	for i := 0; i < 4; i++ {
 		res = l.ContainsPoint(cell.Vertex(i))
 		if !res {
@@ -253,47 +245,28 @@ func (l Loop) ContainsCell(cell Cell) bool {
 //Otherwise, either region intersects the cell, or the intersection
 //relationship could not be determined.
 // TODO this is  super buggy
-func (l Loop) IntersectsCell(cell Cell) bool {
+func (l Loop) IntersectsCell(cell Cell) (res bool) {
 	// fast check: if cell not in bounding rect
 	// return false
 	cellBound := cell.RectBound()
 	if !l.bound.Intersects(cellBound) {
 		return false
 	}
-	verts := l.Vertices()
-	for _, vert := range verts {
-		// if the cell contains one of the edges
-		// then it does intersect
-		contains := cell.ContainsPoint(vert)
-		if contains {
-			return true
-		}
-	}
-	// get cell vertexes
-	var vertexes []Point
+	// if more than 1 and maximum 3 cell vertices
+	// are inside the loop then the cell intersects
+	// the loop but is not contained
+	var count int
 	for i := 0; i < 4; i++ {
-		vertexes = append(vertexes, cell.Vertex(i))
-	}
-	// if  cross cell intersect
-	var x bool
-	for i, vert := range verts {
-		// make sure we get the last vertex
-		if i == len(verts)-1 {
-			i = 0
-		}
-		for j, vert2 := range vertexes {
-			// make sure we get the last vertex
-			if j == len(vertexes)-1 {
-				j = 0
-			}
-			x = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
-			// first true hit then they cross
-			if x {
-				return x
-			}
+		res = l.ContainsPoint(cell.Vertex(i))
+		if res {
+			count++
 		}
 	}
-	return x
+	log.Print(count)
+	if count >= 1 && count < 4 {
+		return true
+	}
+	return res
 }
 
 // RectBound returns a tight bounding rectangle. If the loop contains the point,

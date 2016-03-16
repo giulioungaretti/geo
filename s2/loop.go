@@ -220,18 +220,8 @@ func (l Loop) ContainsCell(cell Cell) (res bool) {
 	if !l.bound.Contains(cellBound) {
 		return false
 	}
-	// cell (*) is inside the bounding box
-	// but it could be outisde the vertices
-	//  *					ouside bbox
-	//  _______________
-	// |*	.________. |	inside bbox
-	// |	|    *   | |	inside
-	// |	|   .__*_. |	sits on vertex
-	// |	|   |      |
-	// |	.___.*     |	contains edge
-	// |_______________|
-	//
-	// get cell vertexes
+	// Simple naive check
+	// for a cell to be insde a loop, its vertexes must be inside
 	for i := 0; i < 4; i++ {
 		res = l.ContainsPoint(cell.Vertex(i))
 		if !res {
@@ -245,28 +235,40 @@ func (l Loop) ContainsCell(cell Cell) (res bool) {
 //Otherwise, either region intersects the cell, or the intersection
 //relationship could not be determined.
 // TODO this is  super buggy
-func (l Loop) IntersectsCell(cell Cell) (res bool) {
-	// fast check: if cell not in bounding rect
-	// return false
-	cellBound := cell.RectBound()
-	if !l.bound.Intersects(cellBound) {
+func (l Loop) IntersectsCell(cell Cell) (intersects bool) {
+	//fast check: bounding rect does not intersect
+	// with cell return false return false
+	intersects = l.bound.IntersectsCell(cell)
+	if !intersects {
 		return false
 	}
-	// if more than 1 and maximum 3 cell vertices
-	// are inside the loop then the cell intersects
-	// the loop but is not contained
-	var count int
+	verts := l.Vertices()
+	// get cell vertexes
+	var vertexes []Point
 	for i := 0; i < 4; i++ {
-		res = l.ContainsPoint(cell.Vertex(i))
-		if res {
-			count++
+		vertexes = append(vertexes, cell.Vertex(i))
+	}
+	// if  cross cell intersect
+	for i, vert := range verts {
+		// make sure we get the last vertex
+		if i == len(verts)-1 {
+			i = -1
+		}
+		for j, vert2 := range vertexes {
+			//make sure we get the last vertex
+			if j == len(vertexes)-1 {
+				j = -1
+			}
+			intersects = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
+			// first true hit then they cross
+			if intersects {
+				log.Print(4)
+				return true
+			}
 		}
 	}
-	log.Print(count)
-	if count >= 1 && count < 4 {
-		return true
-	}
-	return res
+	log.Printf("madonna cagna")
+	return false
 }
 
 // RectBound returns a tight bounding rectangle. If the loop contains the point,

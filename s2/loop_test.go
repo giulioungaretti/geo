@@ -463,3 +463,69 @@ func rotate(l *Loop) *Loop {
 	vertices = append(vertices, l.vertices[0])
 	return LoopFromPoints(vertices)
 }
+
+func TestIntersect(t *testing.T) {
+	rect := LoopFromPoints(parsePoints("33:-84, 33:-75, 36:-75, 36:-84, 33:-84"))
+	point := parsePoints("35.00775189651022:-82.90712295690096")[0]
+	cont := rect.ContainsPoint(point)
+	if !cont {
+		t.Errorf("should contain point")
+	}
+	cell := CellFromPoint(point)
+	cellid := cellIDFromPoint(point)
+	cont = rect.ContainsCell(cell)
+	if !cont {
+		t.Errorf("should contain cell")
+	}
+	for i := 0; i < 31; i++ {
+		cell = CellFromCellID(cellid.Parent(i))
+		cont = rect.ContainsCell(cell)
+		if !cont {
+			if i > 5 {
+				t.Errorf("lvel %v contains cell: %v", i, cont)
+			}
+		}
+	}
+	for i := 0; i < 31; i++ {
+		cell = CellFromCellID(cellid.Parent(i))
+		cont = rect.IntersectsCell(cell)
+		if !cont {
+			if i == 3 || i == 4 || i == 5 {
+				t.Errorf("lvel %v itersect cell: %v", i, cont)
+			}
+		}
+	}
+
+	// Rectangles that intersect a face but where no vertex of one region
+	// is contained by the other region.  The first one passes through
+	// a corner of one of the face cells.
+	rr := rectFromDegrees(-37, -70, -36, -20)
+	var points []Point
+	for i := 0; i < 4; i++ {
+		points = append(points, PointFromLatLng(rr.Vertex(i)))
+	}
+	r := LoopFromPoints(points)
+	c := CellFromCellID(CellIDFromFace(5))
+	intersects := r.IntersectsCell(c)
+	cont = r.ContainsCell(c)
+	if !intersects {
+		t.Error("expected interection")
+	}
+	if cont {
+		t.Error("un-expected contain")
+	}
+}
+func BenchmarkContains(b *testing.B) {
+	rect := LoopFromPoints(parsePoints("33:-84, 33:-75, 36:-75, 36:-84, 33:-84"))
+	point := parsePoints("35.00775189651022:-82.90712295690096")[0]
+	for n := 0; n < b.N; n++ {
+		rect.ContainsPoint(point)
+	}
+}
+
+func BenchmarkContainsComplex(b *testing.B) {
+	point := parsePoints("35.00775189651022:-82.90712295690096")[0]
+	for n := 0; n < b.N; n++ {
+		candyCane.ContainsPoint(point)
+	}
+}

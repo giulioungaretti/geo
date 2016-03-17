@@ -17,7 +17,6 @@ limitations under the License.
 package s2
 
 import (
-	"log"
 	"math"
 
 	"github.com/golang/geo/r1"
@@ -262,12 +261,10 @@ func (l Loop) IntersectsCell(cell Cell) (intersects bool) {
 			intersects = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
 			// first true hit then they cross
 			if intersects {
-				log.Print(4)
 				return true
 			}
 		}
 	}
-	log.Printf("madonna cagna")
 	return false
 }
 

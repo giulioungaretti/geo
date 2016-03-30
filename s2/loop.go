@@ -212,7 +212,7 @@ func (l Loop) CapBound() Cap {
 // if the cell is on the edges is discarded, but it could be either
 // inside the loop, or in the space between the bbox and the edges.
 // TODO is this correct?
-func (l Loop) ContainsCell(cell Cell) (res bool) {
+func (l Loop) ContainsCell(cell Cell) bool {
 	// fast check: if cell not in bounding rect
 	// return false
 	cellBound := cell.RectBound()
@@ -222,50 +222,39 @@ func (l Loop) ContainsCell(cell Cell) (res bool) {
 	// Simple naive check
 	// for a cell to be insde a loop, its vertexes must be inside
 	for i := 0; i < 4; i++ {
-		res = l.ContainsPoint(cell.Vertex(i))
-		if !res {
+		contains := l.ContainsPoint(cell.Vertex(i))
+		if !contains {
 			return false
 		}
 	}
-	return res
+	return true
 }
 
 //IntersectsCell returns false if the region does not intersect the given cell.
-//Otherwise, either region intersects the cell, or the intersection
-//relationship could not be determined.
-// TODO this is  super buggy
+//Otherwise, either region intersects the cell, or the it contains the cell.
 func (l Loop) IntersectsCell(cell Cell) (intersects bool) {
 	//fast check: bounding rect does not intersect
 	// with cell return false return false
+	// this could lead to approximations
 	intersects = l.bound.IntersectsCell(cell)
 	if !intersects {
 		return false
 	}
-	verts := l.Vertices()
-	// get cell vertexes
-	var vertexes []Point
+	// check for crossing between vertices of loop and cell
+	// code inspired from other parts of s2 lib
 	for i := 0; i < 4; i++ {
-		vertexes = append(vertexes, cell.Vertex(i))
-	}
-	// if  cross cell intersect
-	for i, vert := range verts {
-		// make sure we get the last vertex
-		if i == len(verts)-1 {
-			i = -1
-		}
-		for j, vert2 := range vertexes {
-			//make sure we get the last vertex
-			if j == len(vertexes)-1 {
-				j = -1
-			}
-			intersects = SimpleCrossing(vert, verts[i+1], vert2, vertexes[j+1])
-			// first true hit then they cross
-			if intersects {
+		crosser := NewChainEdgeCrosser(cell.Vertex(i), cell.Vertex((i+1)%4), l.Vertex(0))
+		for _, v := range l.Vertices()[1:] {
+			if crosser.EdgeOrVertexChainCrossing(v) {
 				return true
 			}
 		}
+		if crosser.EdgeOrVertexChainCrossing(l.Vertex(0)) { //close the loop
+			return true
+		}
 	}
-	return false
+	// if it dit not intersect then it could be inside
+	return l.ContainsCell(cell)
 }
 
 // RectBound returns a tight bounding rectangle. If the loop contains the point,

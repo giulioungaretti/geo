@@ -211,7 +211,8 @@ func (l Loop) CapBound() Cap {
 // ContainsCell  method returns true if the loop contains the cell
 // if the cell is on the edges is discarded, but it could be either
 // inside the loop, or in the space between the bbox and the edges.
-// TODO is this correct?
+// NOTE this is a naive implementation both this
+// and the underlying ContainsPoint could be optimizied
 func (l Loop) ContainsCell(cell Cell) bool {
 	// fast check: if cell not in bounding rect
 	// return false
@@ -253,8 +254,8 @@ func (l Loop) IntersectsCell(cell Cell) (intersects bool) {
 			return true
 		}
 	}
-	// if it dit not intersect then it could be inside
-	return l.ContainsCell(cell)
+	// else we don't know
+	return
 }
 
 // RectBound returns a tight bounding rectangle. If the loop contains the point,
@@ -283,7 +284,10 @@ func (l Loop) ContainsPoint(p Point) bool {
 	if len(l.vertices) < 3 {
 		return l.originInside
 	}
-
+	// return early if not in the bound
+	if !l.bound.ContainsPoint(p) {
+		return false
+	}
 	origin := OriginPoint()
 	inside := l.originInside
 	crosser := NewChainEdgeCrosser(origin, p, l.vertices[0])

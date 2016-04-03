@@ -291,10 +291,6 @@ func (l Loop) ContainsPoint(p Point) bool {
 	if len(l.vertices) < 3 {
 		return l.originInside
 	}
-	// return early if not in the bound
-	if !l.bound.ContainsPoint(p) {
-		return false
-	}
 	origin := OriginPoint()
 	inside := l.originInside
 	crosser := NewChainEdgeCrosser(origin, p, l.vertices[0])

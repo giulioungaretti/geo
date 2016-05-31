@@ -203,11 +203,6 @@ func (l Loop) isEmptyOrFull() bool {
 	return len(l.vertices) == 1
 }
 
-// CapBound returns a bounding spherical cap. This is not guaranteed to be exact.
-func (l Loop) CapBound() Cap {
-	return l.bound.CapBound()
-}
-
 // ContainsCell  method returns true if the loop contains the cell
 // if the cell is on the edges is discarded, but it could be either
 // inside the loop, or in the space between the bbox and the edges.
@@ -233,29 +228,24 @@ func (l Loop) ContainsCell(cell Cell) bool {
 
 //IntersectsCell returns false if the region does not intersect the given cell.
 //Otherwise, either region intersects the cell, or the it contains the cell.
-func (l Loop) IntersectsCell(cell Cell) (intersects bool) {
-	//fast check: bounding rect does not intersect
-	// with cell return false return false
-	// this could lead to approximations
-	intersects = l.bound.IntersectsCell(cell)
-	if !intersects {
-		return false
-	}
-	// check for crossing between vertices of loop and cell
-	// code inspired from other parts of s2 lib
-	for i := 0; i < 4; i++ {
-		crosser := NewChainEdgeCrosser(cell.Vertex(i), cell.Vertex((i+1)%4), l.Vertex(0))
-		for _, v := range l.Vertices()[1:] {
-			if crosser.EdgeOrVertexChainCrossing(v) {
-				return true
-			}
-		}
-		if crosser.EdgeOrVertexChainCrossing(l.Vertex(0)) { //close the loop
-			return true
-		}
-	}
-	// else we don't know
-	return
+func (l Loop) IntersectsCell(c Cell) bool {
+    // if any of the cell's vertices is contained by the loop
+    // they intersect
+    for i := 0; i < 4; i++ {
+        v := c.Vertex(i)
+        if l.ContainsPoint(v) {
+            return true
+        }
+    }
+    // missing case from the above implementation
+    // where the loop is fully contained by the cell
+    for _, v := range l.Vertices() {
+        if c.ContainsPoint(v) {
+            return true
+        }
+    }
+
+    return false
 }
 
 // RectBound returns a tight bounding rectangle. If the loop contains the point,
